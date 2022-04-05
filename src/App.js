@@ -1,39 +1,50 @@
 import "./App.css";
 import React from "react";
-import moment from "moment";
-import { employees } from "./Employees";
 import FilterCheckbox from "./FilterCheckbox/FilterCheckbox";
 import InputMask from "react-input-mask";
+import { connect } from "react-redux";
+import store from "./store";
+import Header from "./Header";
+import EditIcon from "@mui/icons-material/Edit";
+import moment from "moment";
+import Modal from "./Modal";
 
-const App = () => {
+const App = ({ employees }) => {
   const [filteredEmployees, setFilteredEmployees] = React.useState([]);
-  // const [sortList, setSortList] = React.useState("az");
   const [roleList, setRoleList] = React.useState("none");
   const [isArchived, setIsArchived] = React.useState(false);
+  const [sortListByBirth, setSortListByBirth] =
+    React.useState("birthdayInitial");
+  const [sortListByName, setSortListByName] = React.useState("nameInitial");
 
-  const sortedByName = (sorting) => {
-    if (sortList === "az") {
-      const sortedList = [...filteredEmployees].sort((a, b) =>
-        a[sorting] > b[sorting] ? 1 : -1
-      );
-      setFilteredEmployees(sortedList);
-      setSortList("aa");
-    }
-
-    if (sortList === "aa") {
-      const sortedList = [...filteredEmployees].sort((a, b) =>
-        a[sorting] < b[sorting] ? 1 : -1
-      );
-      setFilteredEmployees(sortedList);
-      setSortList("az");
+  const sortedByBirth = () => {
+    if (sortListByBirth === "birthdayInitial") {
+      setSortListByBirth("birthday");
+      setSortListByName("nameInitial");
+    } else {
+      if (sortListByBirth === "birthdayReverse") {
+        setSortListByBirth("birthday");
+        setSortListByName("nameInitial");
+        return;
+      }
+      setSortListByBirth("birthdayReverse");
+      setSortListByName("nameInitial");
     }
   };
 
-  const checkboxSwitcher = () => {
-    setIsArchived(!isArchived);
+  const sortedByName = () => {
+    if (sortListByName === "nameInitial") {
+      setSortListByName("nameIncrease");
+    } else {
+      if (sortListByName === "nameDecrease") {
+        setSortListByName("nameIncrease");
+        return;
+      }
+      setSortListByName("nameDecrease");
+    }
   };
 
-  const sortEmployees = (roleList, isArchived, employees, birthday) => {
+  const sortEmployees = (roleList, isArchived, employees, birthday, name) => {
     let result = [...employees];
 
     if (isArchived) {
@@ -61,26 +72,30 @@ const App = () => {
       }
     }
 
+    if (name !== "nameInitial") {
+      if (name === "nameIncrease") {
+        result.sort((a, b) => (a.name > b.name ? 1 : -1));
+      }
+      if (name === "nameDecrease") {
+        result.sort((a, b) => (a.name < b.name ? 1 : -1));
+      }
+    }
     setFilteredEmployees(result);
   };
 
-  const [sortList, setSortList] = React.useState("birthdayInitial");
-
-  const sortedByBirth = () => {
-    if (sortList === "birthdayInitial") {
-      setSortList("birthday");
-    } else {
-      if (sortList === "birthdayReverse") {
-        setSortList("birthday");
-        return;
-      }
-      setSortList("birthdayReverse");
-    }
-  };
-
   React.useEffect(() => {
-    sortEmployees(roleList, isArchived, employees, sortList);
-  }, [roleList, isArchived, sortList]);
+    sortEmployees(
+      roleList,
+      isArchived,
+      employees,
+      sortListByBirth,
+      sortListByName
+    );
+  }, [roleList, isArchived, sortListByBirth, employees, sortListByName]);
+
+  const checkboxSwitcher = () => {
+    setIsArchived(!isArchived);
+  };
 
   const [addEmployeeData, setAddEmployeeData] = React.useState({
     name: "",
@@ -91,67 +106,135 @@ const App = () => {
 
   const addEmployeeHandler = (e) => {
     e.preventDefault();
-
     const { name, value } = e.target;
-    const newData = { ...addEmployeeData };
-    newData[name] = value;
-
-    setAddEmployeeData(newData);
+    setAddEmployeeData({ ...addEmployeeData, [name]: value });
   };
 
   const addEmployeeSubmit = (e) => {
     e.preventDefault();
-    const addEmployee = {
+    const payload = {
       name: addEmployeeData.name,
       role: addEmployeeData.role,
       phone: addEmployeeData.phone,
       birthday: addEmployeeData.birthday,
+      isArchive: false,
     };
 
-    const newEmployee = [...filteredEmployees, addEmployee];
-    setFilteredEmployees(newEmployee);
+    store.dispatch({ type: "addEmployees", payload });
   };
 
+  const [editContactId, setEditContactId] = React.useState(null);
+  const [editEmployeeData, setEditEmployeeData] = React.useState({
+    name: "",
+    role: "",
+    phone: "",
+    birthday: "",
+    isArchive: false,
+  });
+
+  const editEmployeeHandler = (e) => {
+    e.preventDefault();
+    const { name, value } = e.target.value;
+    setEditEmployeeData({ ...editEmployeeData, [name]: value });
+  };
+
+  const editEmployeeSubmit = (e) => {
+    e.preventDefault();
+    const payload = {
+      id: editContactId,
+      name: editEmployeeData.name,
+      role: editEmployeeData.role,
+      phone: editEmployeeData.phone,
+      birthday: editEmployeeData.birthday,
+      isArchive: false,
+    };
+
+    const editEmployee = [...filteredEmployees];
+    const index = filteredEmployees.findIndex(
+      (data) => data.id === editContactId
+    );
+    editEmployee[index] = payload;
+    setFilteredEmployees(editEmployee);
+    setEditContactId(null);
+  };
+
+  const handleEditClick = (event, contact) => {
+    event.preventDefault();
+    setEditContactId(contact.id);
+
+    const values = {
+      name: contact.name,
+      role: contact.role,
+      phone: contact.phone,
+      birthday: contact.birthday,
+    };
+
+    setEditEmployeeData(values);
+  };
+
+  const [show, setShow] = React.useState(false);
+  const handleShow = () => setShow(true);
+  const handleClose = () => setShow(false);
+
   return (
-    <div>
+    <div className="container">
+      <Header />
       <FilterCheckbox
         checkboxSwitcher={checkboxSwitcher}
         archived={isArchived}
       />
-      <div className="employees-table">
-        <p
-          className="employees-table-name"
-          onClick={() => sortedByName("name")}
-        >
-          Имя
-        </p>
-        <p onClick={() => sortedByBirth()}>Дата рождения</p>
-        <label>
-          Должность
-          <select onChange={(e) => setRoleList(e.target.value)}>
-            <option value="none"></option>
-            <option value="cook">Cook</option>
-            <option value="waiter">Waiter</option>
-            <option value="driver">Driver</option>
-          </select>
-        </label>
-        <p>Телефон</p>
-      </div>
-      <div className="employees-list">
-        {filteredEmployees.map((item) => {
-          return (
-            <ul className="employee" key={item.id}>
-              <li className="employee-name">{item.name}</li>
-              <li className={item.birthday}>{item.birthday}</li>
-              <li className={item.role}>{item.role}</li>
-              <li className={item.phone}>{item.phone}</li>
-            </ul>
-          );
-        })}
-      </div>
+
+      <form onSubmit={editEmployeeSubmit}>
+        <Modal
+          show={show}
+          onClose={handleClose}
+          filteredEmployees={filteredEmployees}
+          setFilteredEmployees={setFilteredEmployees}
+          employees={employees}
+          editEmployeeHandler={editEmployeeHandler}
+        />
+        <table>
+          <thead>
+            <tr>
+              <th onClick={() => sortedByName()}>Имя</th>
+              <th onClick={() => sortedByBirth()}>Дата рождения</th>
+              <th>
+                <label className="role-container">
+                  Должность
+                  <select onChange={(e) => setRoleList(e.target.value)}>
+                    <option value="none"></option>
+                    <option value="cook">Cook</option>
+                    <option value="waiter">Waiter</option>
+                    <option value="driver">Driver</option>
+                  </select>
+                </label>
+              </th>
+              <th>Телефон</th>
+              <th>Изменить данные</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredEmployees.map((item) => {
+              return (
+                <tr key={item.id}>
+                  <td className={item.name}>{item.name}</td>
+                  <td className={item.birthday}>{item.birthday}</td>
+                  <td className={item.role}>{item.role}</td>
+                  <td className={item.phone}>{item.phone}</td>
+                  <td>
+                    <EditIcon className="edit-button" onClick={handleShow} />
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </form>
 
       <form className="add-employee-form" onSubmit={addEmployeeSubmit}>
-        <button type="submit">Добавить сотрудника</button>
+        <button className="form-button" type="submit">
+          Добавить сотрудника
+        </button>
         <input
           type="text"
           name="name"
@@ -162,6 +245,7 @@ const App = () => {
           pattern="[а-яА-ЯёЁa-zA-Z- ]{1,}"
           onChange={addEmployeeHandler}
           title="Фамилия и Имя должны состоять только из букв"
+          className="form-input"
         />
         <input
           list="role"
@@ -169,8 +253,9 @@ const App = () => {
           placeholder="Должность"
           onChange={addEmployeeHandler}
           autoComplete="off"
-          pattern="cook | waiter | driver"
+          pattern="cook|waiter|driver"
           title="Выберите одно из значений"
+          className="form-input"
         />
         <datalist id="role">
           <option value="cook" />
@@ -184,6 +269,7 @@ const App = () => {
           required
           placeholder="Номер телефона"
           onChange={addEmployeeHandler}
+          className="form-input"
         />
         <InputMask
           mask="99.99.9999"
@@ -192,10 +278,15 @@ const App = () => {
           required
           placeholder="Дата рождения"
           onChange={addEmployeeHandler}
+          className="form-input"
         />
       </form>
     </div>
   );
 };
 
-export default App;
+const mapStateToProps = (state) => {
+  const { employees } = state;
+  return { employees };
+};
+export default connect(mapStateToProps)(App);
