@@ -7,6 +7,15 @@ function counterReducer(state = { employees: [] }, action) {
   switch (action.type) {
     case "addEmployees":
       return { employees: [...state.employees, addEmployeeId(action.payload)] };
+    case "updateEmployees":
+      return {
+        employees: state.employees.map((employee) =>
+          employee.id === action.updatedEmployee.id
+            ? action.updatedEmployee
+            : employee
+        ),
+      };
+
     default:
       return state;
   }

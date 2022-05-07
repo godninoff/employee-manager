@@ -2,7 +2,6 @@
   "name": "company-employees",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://github.com/godninoff/employee-manager#readme",
   "dependencies": {
     "@emotion/react": "^11.8.2",
     "@emotion/styled": "^11.8.1",

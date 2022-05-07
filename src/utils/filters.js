@@ -42,4 +42,5 @@ export const sortEmployees = (
       result.sort((a, b) => (a.name < b.name ? 1 : -1));
     }
   }
+  return result;
 };

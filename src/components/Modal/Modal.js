@@ -1,68 +1,36 @@
 import React from "react";
 import "./Modal.css";
-import FilterCheckbox from "./FilterCheckbox/FilterCheckbox";
+import FilterCheckbox from "../FilterCheckbox/FilterCheckbox";
 import InputMask from "react-input-mask";
+import store from "../../utils/store";
 
-const Modal = ({ employees, setFilteredEmployees, show, onClose }) => {
-  //   const [editEmployeeData, setEditEmployeeData] = React.useState({
-  //     name: "",
-  //     role: "",
-  //     phone: "",
-  //     birthday: "",
-  //     isArchive: false,
-  //   });
-
-  //   const editEmployeeHandler = (e) => {
-  //     e.preventDefault();
-  //     const { name, value } = e.target;
-  //     setEditEmployeeData({ ...editEmployeeData, [name]: value });
-  //   };
-
-  //   const editEmployeeSubmit = (e) => {
-  //     e.preventDefault();
-  //     const payload = {
-  //       id: props.employees.map((e) => e.id),
-  //       name: editEmployeeData.name,
-  //       role: editEmployeeData.role,
-  //       phone: editEmployeeData.phone,
-  //       birthday: editEmployeeData.birthday,
-  //       isArchive: false,
-  //     };
-
-  //     const editEmployee = [...props.employees];
-  //     const index = props.employees.findIndex(
-  //       (data) => data.id === props.employees.id
-  //     );
-  //     editEmployee[index] = payload;
-  //     props.setFilteredEmployees(editEmployee);
-  //   };
-
-  //   const [isArchived, setIsArchived] = React.useState(
-  //     props.employees.isArchived
-  //   );
-
-  const id = employees.id;
-  const [name, setName] = React.useState(employees.name);
-  const [role, setRole] = React.useState(employees.role);
-  const [phone, setPhone] = React.useState(employees.phone);
-  const [birthday, setBirthday] = React.useState(employees.birthday);
-
-  const updateEmployee = (id, updatedEmployee) => {
-    setFilteredEmployees(
-      employees.map((employee) =>
-        employee.id === id ? updatedEmployee : employee
-      )
-    );
-  };
+const Modal = ({
+  filteredEmployees,
+  setFilteredEmployees,
+  show,
+  onClose,
+  employeeData,
+}) => {
+  const id = employeeData.id;
+  const [name, setName] = React.useState(employeeData.name);
+  const [role, setRole] = React.useState(employeeData.role);
+  const [phone, setPhone] = React.useState(employeeData.phone);
+  const [birthday, setBirthday] = React.useState(employeeData.birthday);
 
   const updatedEmployee = { id, name, role, phone, birthday };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    updateEmployee(id, updatedEmployee);
+    store.dispatch({ type: "updateEmployees", updatedEmployee });
+    onClose();
   };
 
-  console.log(updatedEmployee);
+  React.useEffect(() => {
+    setName(employeeData.name);
+    setRole(employeeData.role);
+    setBirthday(employeeData.birthday);
+    setPhone(employeeData.phone);
+  }, [employeeData]);
 
   return (
     <div className={`popup ${show ? "popup_visible" : ""}`}>
@@ -72,7 +40,7 @@ const Modal = ({ employees, setFilteredEmployees, show, onClose }) => {
         </button>
         <form className="add-employee-form" onSubmit={handleSubmit}>
           <FilterCheckbox />
-          <button className="form-button" type="button">
+          <button className="form-button" type="submit">
             Изменить данные
           </button>
           <input

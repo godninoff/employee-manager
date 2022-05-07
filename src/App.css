@@ -25,6 +25,9 @@ table td:last-child {
   opacity: 0.6;
   cursor: pointer;
 }
+.edit-icon {
+  pointer-events: none;
+}
 
 .add-employee-form {
   margin: 30px auto;
